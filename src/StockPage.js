@@ -2,156 +2,108 @@ import React, { useState, useEffect } from 'react';
 import { db } from './firebase';
 
 const StockPage = () => {
-  const [selectedItem, setSelectedItem] = useState('');
-  const [fabricColor, setFabricColor] = useState('');
-  const [fabricSize, setFabricSize] = useState('');
-  const [stockData, setStockData] = useState([]);
-  const [selectedStockItem, setSelectedStockItem] = useState({}); // New state variable for selected stock item
+  const [dropdownValue, setDropdownValue] = useState(''); // State for selected dropdown value
+  const [stockData, setStockData] = useState([]); // State for the fetched stock data
+  const [dropdownOptions, setDropdownOptions] = useState([]); // State for the available dropdown options
 
   useEffect(() => {
-    const fetchData = async () => {
-      const snapshot = await db.collection('stock').get();
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setStockData(data);
+    // Fetch available options from Firestore
+    const fetchOptions = async () => {
+      try {
+        const collectionRef = db.collection('FabricStock');
+        const querySnapshot = await collectionRef.get();
+
+        // Map through the query snapshot to create an array of option values
+        const optionsArray = querySnapshot.docs.map((doc) => doc.id);
+        setDropdownOptions(optionsArray);
+      } catch (error) {
+        console.error('Error fetching options:', error);
+      }
     };
-    fetchData();
+
+    fetchOptions();
   }, []);
 
-  const handleItemChange = e => {
-    setSelectedItem(e.target.value);
-  };
+  useEffect(() => {
+    // Fetch stock data from Firestore based on the selected dropdown value
+    const fetchData = async () => {
+      if (!dropdownValue) {
+        // If no dropdown value is selected, set stock data to an empty array
+        setStockData([]);
+        return;
+      }
 
-  const handleColorChange = e => {
-    setFabricColor(e.target.value);
-  };
+      try {
+        const collectionRef = db.collection('FabricStock').doc(dropdownValue);
+        const docSnapshot = await collectionRef.get();
 
-  const handleSizeChange = e => {
-    setFabricSize(e.target.value);
-  };
+        if (docSnapshot.exists) {
+          // Get the data for the selected style from the document snapshot
+          const data = docSnapshot.data();
+          // Convert the data object into an array of stock data objects
+          const stockArray = Object.entries(data).map(([color, stock]) => ({ color, stock }));
+          setStockData(stockArray);
+        } else {
+          // If the document does not exist, set stock data to an empty array
+          setStockData([]);
+        }
+      } catch (error) {
+        console.error('Error fetching stock data:', error);
+      }
+    };
 
-  const handleUpdate = async () => {
-    if (!selectedItem || !fabricColor || !fabricSize) {
-      return;
-    }
+    fetchData();
+  }, [dropdownValue]);
 
-    try {
-      await db.collection('stock').add({
-        item: selectedItem,
-        color: fabricColor,
-        size: fabricSize
-      });
-
-      setSelectedItem('');
-      setFabricColor('');
-      setFabricSize('');
-      // Refresh stock data
-      const snapshot = await db.collection('stock').get();
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setStockData(data);
-    } catch (error) {
-      console.error('Error adding stock: ', error);
-    }
-  };
-
-  const handleDelete = async id => {
-    try {
-      await db.collection('stock').doc(id).delete();
-      // Refresh stock data
-      const snapshot = await db.collection('stock').get();
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setStockData(data);
-    } catch (error) {
-      console.error('Error removing stock: ', error);
-    }
-  };
-
-  const handleEdit = stockItem => {
-    setSelectedStockItem(stockItem);
-    setFabricColor(stockItem.color);
-    setFabricSize(stockItem.size);
-  };
-
-  const handleEditUpdate = async () => {
-    try {
-      await db.collection('stock').doc(selectedStockItem.id).update({
-        color: fabricColor,
-        size: fabricSize
-      });
-      setSelectedStockItem({});
-      setFabricColor('');
-      setFabricSize('');
-      // Refresh stock data
-      const snapshot = await db.collection('stock').get();
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setStockData(data);
-    } catch (error) {
-      console.error('Error updating stock: ', error);
-    }
+  const handleDropdownChange = (event) => {
+    setDropdownValue(event.target.value);
   };
 
   return (
     <div>
-      <h2>Stock Page</h2>
-      <div className="form-group">
-        <label htmlFor="item">Item:</label>
-        <select id="item" className="form-control" value={selectedItem} onChange={handleItemChange}>
-          <option value="">-- Select Item --</option>
-          <option value="colors/solids">Colors/Solids</option>
-          <option value="allure">Allure</option>
+      <div className="card p-3 m-4">
+        <select
+          className="form-select"
+          aria-label="Default select example"
+          value={dropdownValue}
+          onChange={handleDropdownChange}
+        >
+          <option value="">Select style</option>
+          {dropdownOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
         </select>
       </div>
-      {selectedItem === 'colors/solids' && (
-        <div>
-          <h4>Colors/Solids Stock</h4>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Color</th>
-                <th>Size</th>
-                <th></th>
+      <div className="card m-4 p-1">
+        <table className="table table-striped">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Color</th>
+              <th scope="col">Stock</th>
+              <th scope="col">Inward</th>
+              <th scope="col">Outward</th>
+            </tr>
+          </thead>
+          <tbody>
+            {stockData.map((item, index) => (
+              <tr key={index}>
+                <th scope="row">{index + 1}</th>
+                <td>{item.color}</td>
+                <td>{item.stock}</td>
+                <td>
+                  <button className="btn btn-success">Inward</button>
+                </td>
+                <td>
+                  <button className="btn btn-danger">Outward</button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {stockData.map(stockItem => (
-                <tr key={stockItem.id}>
-                  <td>
-                    {selectedStockItem.id === stockItem.id ? (
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={fabricColor}
-                        onChange={handleColorChange}
-                      />
-                    ) : (
-                      stockItem.color
-                    )}
-                  </td>
-                  <td>
-                    {selectedStockItem.id === stockItem.id ? (
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={fabricSize}
-                        onChange={handleSizeChange}
-                      />
-                    ) : (
-                      stockItem.size
-                    )}
-                  </td>
-                  <td>
-                    {selectedStockItem.id === stockItem.id ? (
-                      <button className="btn btn-primary" onClick={handleEditUpdate}>Save</button>
-                    ) : (
-                      <button className="btn btn-info" onClick={() => handleEdit(stockItem)}>Edit</button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <button className="btn btn-secondary" onClick={handleUpdate}>Add More</button>
-        </div>
-      )}
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

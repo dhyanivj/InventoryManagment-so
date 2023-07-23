@@ -1,22 +1,43 @@
-import React, { useState } from "react";
-import {db} from "./firebase";
+import React, { useState, useEffect } from "react";
+import { db } from "./firebase";
 
 const BedsheetStockPage = () => {
   const [rows, setRows] = useState([{ color: "", size: "", quantity: "", newSizeValue: 0 }]);
-  const [stockArr, setStockArr] = useState({
-    red: 50,
-    green: 51,
-    yellow: 40,
-  });
+  const [stockArr, setStockArr] = useState({});
 
   const SizeValue = {
-    "54x90": 3,
-    "90x108": 4,
-    "108x108": 5,
+    "54x90": 1.5,
+    "90x108": 3,
+    "108x108": 3.54,
   };
+
+  // Fetch stock data from Firestore on component mount
+  useEffect(() => {
+    const fetchStockData = async () => {
+      try {
+        const collectionRef = db.collection("FabricStock").doc("Colors210");
+        const docSnapshot = await collectionRef.get();
+        if (docSnapshot.exists) {
+          const stockData = docSnapshot.data();
+          setStockArr(stockData);
+        } else {
+          console.log("Document not found.");
+        }
+      } catch (error) {
+        console.error("Error fetching stock data:", error);
+      }
+    };
+    fetchStockData();
+  }, []);
 
   const handleAddMore = () => {
     setRows([...rows, { color: "", size: "", quantity: "", newSizeValue: 0 }]);
+  };
+
+  const handleRemoveRow = (index) => {
+    const updatedRows = [...rows];
+    updatedRows.splice(index, 1);
+    setRows(updatedRows);
   };
 
   const handleInputChange = (index, field, value) => {
@@ -60,11 +81,10 @@ const BedsheetStockPage = () => {
       const collectionRef = db.collection("FabricStock").doc("Colors210");
       await collectionRef.update(newStockUpdate);
       console.log("Firestore data updated successfully.");
+      setStockArr((prevStockArr) => ({ ...prevStockArr, ...newStockUpdate }));
     } catch (error) {
       console.error("Error updating Firestore data:", error);
     }
-
-    setStockArr((prevStockArr) => ({ ...prevStockArr, ...newStockUpdate }));
   };
 
   return (
@@ -107,6 +127,17 @@ const BedsheetStockPage = () => {
                     className="form-control"
                     placeholder="Quantity"
                   />
+                </td>
+                <td>
+                  {index > 0 && (
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      onClick={() => handleRemoveRow(index)}
+                    >
+                      Remove
+                    </button>
+                  )}
                 </td>
               </tr>
             </table>
