@@ -1,77 +1,112 @@
 import React, { useState } from "react";
+import {db} from "./firebase";
 
 const BedsheetStockPage = () => {
-  const [rows, setRows] = useState(1); // Initial number of rows is 1
+  const [rows, setRows] = useState([{ color: "", size: "", quantity: "", newSizeValue: 0 }]);
+  const [stockArr, setStockArr] = useState({
+    red: 50,
+    green: 51,
+    yellow: 40,
+  });
 
-  const handleAddMore = () => {
-    setRows((prevRows) => prevRows + 1); // Increment the number of rows
+  const SizeValue = {
+    "54x90": 3,
+    "90x108": 4,
+    "108x108": 5,
   };
 
-  const handleSubmit = () => {
-    const selectedValues = [];
-    for (let i = 0; i < rows; i++) {
-      // Get the selected values for each row
-      const select1 = document.getElementById(`select1-${i}`);
-      const select2 = document.getElementById(`select2-${i}`);
-      const select3 = document.getElementById(`select3-${i}`);
-      const select4 = document.getElementById(`select4-${i}`);
+  const handleAddMore = () => {
+    setRows([...rows, { color: "", size: "", quantity: "", newSizeValue: 0 }]);
+  };
 
-      const value1 = select1.options[select1.selectedIndex].value;
-      const value2 = select2.options[select2.selectedIndex].value;
-      const value3 = select3.options[select3.selectedIndex].value;
-      const value4 = select4.options[select4.selectedIndex].value;
+  const handleInputChange = (index, field, value) => {
+    const updatedRows = [...rows];
+    updatedRows[index][field] = value;
+    if (field === "size") {
+      updatedRows[index]["newSizeValue"] = SizeValue[value] || 0;
+    }
+    setRows(updatedRows);
+  };
 
-      selectedValues.push({ value1, value2, value3, value4 });
+  const handleSubmit = async () => {
+    const newStockUpdate = {};
+
+    rows.forEach((row) => {
+      const { color, size, quantity } = row;
+
+      if (color && size && quantity) {
+        const parsedQuantity = parseInt(quantity, 10);
+        const newSizeValue = SizeValue[size] || 0; // Use 0 if the size is not found in SizeValue
+
+        if (!isNaN(parsedQuantity)) {
+          let newStockValue;
+          if (parsedQuantity === 1) {
+            // Special case for quantity "1"
+            newStockValue = stockArr[color] - newSizeValue;
+          } else {
+            newStockValue = stockArr[color] - newSizeValue * parsedQuantity;
+          }
+          newStockUpdate[color] = newStockValue;
+        } else {
+          console.error(`Invalid quantity for ${color}.`);
+        }
+      } else {
+        console.error(`Please fill all required fields for ${color}.`);
+      }
+    });
+
+    try {
+      // Update Firestore data here
+      const collectionRef = db.collection("FabricStock").doc("Colors210");
+      await collectionRef.update(newStockUpdate);
+      console.log("Firestore data updated successfully.");
+    } catch (error) {
+      console.error("Error updating Firestore data:", error);
     }
 
-    // Show selected values in a popup
-    alert(JSON.stringify(selectedValues));
+    setStockArr((prevStockArr) => ({ ...prevStockArr, ...newStockUpdate }));
   };
 
   return (
     <>
       <div className="card mt-4">
-        <div className="card-header">Mater edit</div>
+        <div className="card-header">Master Edit</div>
         <div className="card-body">
-          {Array.from({ length: rows }).map((_, index) => (
+          {rows.map((row, index) => (
             <table key={index}>
               <tr>
                 <td>
-                  <select id={`select1-${index}`} className="form-select">
-                    <option value="solids">Solids</option>
-                    <option value="colors">Colors</option>
-                    <option value="allure">Allure</option>
+                  <select
+                    className="form-select"
+                    value={row.color}
+                    onChange={(e) => handleInputChange(index, "color", e.target.value)}
+                  >
+                    <option value="">Select Color</option>
+                    <option value="red">Red</option>
+                    <option value="green">Green</option>
+                    <option value="yellow">Yellow</option>
                   </select>
                 </td>
                 <td>
-                  <select id={`select2-${index}`} className="form-select">
-                    <option value="210">210</option>
-                    <option value="300">300</option>
-                    <option value="600">600</option>
-                  </select>
-                </td>
-                <td>
-                  <select id={`select3-${index}`} className="form-select" >
+                  <select
+                    className="form-select"
+                    value={row.size}
+                    onChange={(e) => handleInputChange(index, "size", e.target.value)}
+                  >
+                    <option value="">Select Size</option>
                     <option value="54x90">54x90</option>
                     <option value="90x108">90x108</option>
                     <option value="108x108">108x108</option>
                   </select>
                 </td>
                 <td>
-                  <select id={`select3-${index}`} className="form-select" >
-                    <option value="red">red</option>
-                    <option value="green">green</option>
-                    <option value="yellow">yellow</option>
-                  </select>
-                </td>
-                <td>
-                  <select id={`select4-${index}`} className="form-select">
-                    <option value="qunatity">Quantity</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                  </select>
+                  <input
+                    type="number"
+                    value={row.quantity}
+                    onChange={(e) => handleInputChange(index, "quantity", e.target.value)}
+                    className="form-control"
+                    placeholder="Quantity"
+                  />
                 </td>
               </tr>
             </table>
@@ -85,6 +120,25 @@ const BedsheetStockPage = () => {
             </button>
           </div>
         </div>
+      </div>
+      <div className="mt-4">
+        <h3>Updated Stock:</h3>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Color</th>
+              <th>Stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(stockArr).map(([color, stock]) => (
+              <tr key={color}>
+                <td>{color}</td>
+                <td>{stock}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </>
   );
