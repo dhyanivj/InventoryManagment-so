@@ -55,9 +55,9 @@ const ForecastPage = () => {
           onChange={handleSelectChange}
         >
           <option value=''>Open this select menu</option>
-          <option value='colors210-red'>Colors 210 - Red</option>
-          <option value='colors210-green'>Colors 210 - Green</option>
-          <option value='colors210-orange'>Colors 210 - Orange</option>
+          <option value='red'>Colors 210 - Red</option>
+          <option value='green'>Colors 210 - Green</option>
+          <option value='yellow'>Colors 210 - Yellow</option>
           <option value='colors210-pink'>Colors 210 - Pink</option>
         </select>
       </div>
