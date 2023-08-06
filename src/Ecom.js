@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback,useMemo  } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
 import { toast, ToastContainer } from 'react-toastify';
@@ -17,13 +17,15 @@ const Ecom = () => {
     quantity: '',
   });
 
-  const SizeValue = {
-    '90x108': 3,
+
+  const SizeValue = useMemo(() => ({
+  '90x108': 3,
     '108x108': 3.54,
     '100x108': 3.3,
     '54x90': 1.5,
     'Pillow Cover': 0.36,
-  };
+  }), []);
+
 
   useEffect(() => {
     const fetchStyleOptions = async () => {
@@ -55,9 +57,14 @@ const Ecom = () => {
     }
   };
 
-  const fetchSizeOptions = useCallback((selectedColor) => {
-    setSizeOptions(Object.keys(SizeValue));
-  }, []); // Empty dependency array, so it won't change on re-renders
+// ... (previous code)
+
+const fetchSizeOptions = useCallback(() => {
+  setSizeOptions(Object.keys(SizeValue));
+}, [SizeValue]);
+
+// ... (rest of the code)
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
