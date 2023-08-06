@@ -1,10 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
 import StockPage from './StockPage';
 import Ecom from './Ecom';
 import BedsheetStockPage from './BedsheetStockPage';
 
 const App = () => {
+  // Initialize Bootstrap collapse on component mount
+  useEffect(() => {
+    const navToggler = document.querySelector('.navbar-toggler');
+    const navbar = document.querySelector('.navbar-collapse');
+    navToggler.addEventListener('click', () => {
+      navbar.classList.toggle('show');
+    });
+  }, []);
+
   return (
     <Router>
       <div className="container">
@@ -19,7 +28,7 @@ const App = () => {
                 <Link className="nav-link" to="/stock">Stock</Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link" to="/Ecom">Sales</Link>
+                <Link className="nav-link" to="/ecom">Sales</Link>
               </li>
               <li className="nav-item">
                 <Link className="nav-link" to="/bedsheet-stock">Bedsheet Stock</Link>
