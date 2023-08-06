@@ -2,8 +2,11 @@ import React, { useState, useEffect } from "react";
 import { db } from "./firebase";
 
 const BedsheetStockPage = () => {
-  const [rows, setRows] = useState([{ color: "", size: "", quantity: "", newSizeValue: 0 }]);
+  const [rows, setRows] = useState([{ style: "", color: "", size: "", quantity: "", newSizeValue: 0 }]);
   const [stockArr, setStockArr] = useState({});
+  const [styleOptions, setStyleOptions] = useState([]);
+  const [colorOptions, setColorOptions] = useState([]);
+  const [selectedStyle, setSelectedStyle] = useState("");
 
   const SizeValue = {
     "54x90": 1.5,
@@ -11,7 +14,6 @@ const BedsheetStockPage = () => {
     "108x108": 3.54,
   };
 
-  // Fetch stock data from Firestore on component mount
   useEffect(() => {
     const fetchStockData = async () => {
       try {
@@ -28,10 +30,45 @@ const BedsheetStockPage = () => {
       }
     };
     fetchStockData();
+
+    const fetchStyleOptions = async () => {
+      try {
+        const collectionRef = db.collection("FabricStock");
+        const querySnapshot = await collectionRef.get();
+        const optionsArray = querySnapshot.docs.map((doc) => doc.id);
+        setStyleOptions(optionsArray);
+      } catch (error) {
+        console.error("Error fetching style options:", error);
+      }
+    };
+    fetchStyleOptions();
   }, []);
 
+  useEffect(() => {
+    const fetchColorOptions = async () => {
+      if (selectedStyle) {
+        try {
+          const collectionRef = db.collection("FabricStock").doc(selectedStyle);
+          const docSnapshot = await collectionRef.get();
+          if (docSnapshot.exists) {
+            const colorData = docSnapshot.data();
+            const optionsArray = Object.keys(colorData);
+            setColorOptions(optionsArray);
+          } else {
+            console.log(`Document not found for style ${selectedStyle}.`);
+          }
+        } catch (error) {
+          console.error("Error fetching color options:", error);
+        }
+      } else {
+        setColorOptions([]); // Clear the color options when no style is selected
+      }
+    };
+    fetchColorOptions();
+  }, [selectedStyle]);
+
   const handleAddMore = () => {
-    setRows([...rows, { color: "", size: "", quantity: "", newSizeValue: 0 }]);
+    setRows([...rows, { style: "", color: "", size: "", quantity: "", newSizeValue: 0 }]);
   };
 
   const handleRemoveRow = (index) => {
@@ -53,9 +90,9 @@ const BedsheetStockPage = () => {
     const newStockUpdate = {};
 
     rows.forEach((row) => {
-      const { color, size, quantity } = row;
+      const { style, color, size, quantity } = row;
 
-      if (color && size && quantity) {
+      if (style && color && size && quantity) {
         const parsedQuantity = parseInt(quantity, 10);
         const newSizeValue = SizeValue[size] || 0; // Use 0 if the size is not found in SizeValue
 
@@ -63,11 +100,11 @@ const BedsheetStockPage = () => {
           let newStockValue;
           if (parsedQuantity === 1) {
             // Special case for quantity "1"
-            newStockValue = stockArr[color] - newSizeValue;
+            newStockValue = stockArr[style][color] - newSizeValue;
           } else {
-            newStockValue = stockArr[color] - newSizeValue * parsedQuantity;
+            newStockValue = stockArr[style][color] - newSizeValue * parsedQuantity;
           }
-          newStockUpdate[color] = newStockValue;
+          newStockUpdate[`${style}.${color}`] = newStockValue;
         } else {
           console.error(`Invalid quantity for ${color}.`);
         }
@@ -98,13 +135,32 @@ const BedsheetStockPage = () => {
                 <td>
                   <select
                     className="form-select"
+                    value={row.style}
+                    onChange={(e) => {
+                      setSelectedStyle(e.target.value);
+                      handleInputChange(index, "style", e.target.value);
+                    }}
+                  >
+                    <option value="">Choose Style</option>
+                    {styleOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <select
+                    className="form-select"
                     value={row.color}
                     onChange={(e) => handleInputChange(index, "color", e.target.value)}
                   >
                     <option value="">Select Color</option>
-                    <option value="red">Red</option>
-                    <option value="green">Green</option>
-                    <option value="yellow">Yellow</option>
+                    {colorOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </select>
                 </td>
                 <td>
@@ -162,12 +218,14 @@ const BedsheetStockPage = () => {
             </tr>
           </thead>
           <tbody>
-            {Object.entries(stockArr).map(([color, stock]) => (
-              <tr key={color}>
-                <td>{color}</td>
-                <td>{stock}</td>
-              </tr>
-            ))}
+            {Object.entries(stockArr).map(([style, colorData]) =>
+              Object.entries(colorData).map(([color, stock]) => (
+                <tr key={`${style}.${color}`}>
+                  <td>{color}</td>
+                  <td>{stock}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

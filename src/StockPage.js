@@ -1,19 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { db } from './firebase';
 
+const Popup = ({ quantity, onQuantityChange, onConfirm, onCancel, colorName }) => {
+  return (
+    <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title">Color: {colorName}</h5>
+            <button type="button" className="btn-close" onClick={onCancel} />
+          </div>
+          <div className="modal-body">
+            <h2>Enter Quantity</h2>
+            <input type="number" value={quantity} onChange={onQuantityChange} />
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={onCancel}>
+              Cancel
+            </button>
+            <button type="button" className="btn btn-primary" onClick={onConfirm}>
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const StockPage = () => {
-  const [dropdownValue, setDropdownValue] = useState(''); // State for selected dropdown value
-  const [stockData, setStockData] = useState([]); // State for the fetched stock data
-  const [dropdownOptions, setDropdownOptions] = useState([]); // State for the available dropdown options
+  const [dropdownValue, setDropdownValue] = useState('');
+  const [stockData, setStockData] = useState([]);
+  const [dropdownOptions, setDropdownOptions] = useState([]);
+  const [showPopup, setShowPopup] = useState(false);
+  const [quantity, setQuantity] = useState(0);
+  const [actionType, setActionType] = useState('');
+  const [selectedColorName, setSelectedColorName] = useState('');
 
   useEffect(() => {
-    // Fetch available options from Firestore
     const fetchOptions = async () => {
       try {
         const collectionRef = db.collection('FabricStock');
         const querySnapshot = await collectionRef.get();
-
-        // Map through the query snapshot to create an array of option values
         const optionsArray = querySnapshot.docs.map((doc) => doc.id);
         setDropdownOptions(optionsArray);
       } catch (error) {
@@ -25,10 +53,8 @@ const StockPage = () => {
   }, []);
 
   useEffect(() => {
-    // Fetch stock data from Firestore based on the selected dropdown value
     const fetchData = async () => {
       if (!dropdownValue) {
-        // If no dropdown value is selected, set stock data to an empty array
         setStockData([]);
         return;
       }
@@ -38,13 +64,10 @@ const StockPage = () => {
         const docSnapshot = await collectionRef.get();
 
         if (docSnapshot.exists) {
-          // Get the data for the selected style from the document snapshot
           const data = docSnapshot.data();
-          // Convert the data object into an array of stock data objects
           const stockArray = Object.entries(data).map(([color, stock]) => ({ color, stock }));
           setStockData(stockArray);
         } else {
-          // If the document does not exist, set stock data to an empty array
           setStockData([]);
         }
       } catch (error) {
@@ -57,6 +80,65 @@ const StockPage = () => {
 
   const handleDropdownChange = (event) => {
     setDropdownValue(event.target.value);
+  };
+
+  const handleInwardButtonClick = (colorName) => {
+    setSelectedColorName(colorName);
+    setActionType('inward');
+    setShowPopup(true);
+  };
+
+  const handleOutwardButtonClick = (colorName) => {
+    setSelectedColorName(colorName);
+    setActionType('outward');
+    setShowPopup(true);
+  };
+
+  const handleQuantityChange = (event) => {
+    setQuantity(Number(event.target.value));
+  };
+
+  const handlePopupConfirm = () => {
+    setShowPopup(false);
+
+    if (dropdownValue && quantity !== 0) {
+      const currentStockItem = stockData.find((item) => item.color === selectedColorName);
+
+      if (!currentStockItem) {
+        console.error('Stock data not found for selected color');
+        return;
+      }
+
+      const currentStock = currentStockItem.stock;
+      let updatedStock;
+
+      if (actionType === 'inward') {
+        updatedStock = currentStock + quantity;
+      } else if (actionType === 'outward') {
+        updatedStock = Math.max(0, currentStock - quantity);
+      }
+
+      db.collection('FabricStock')
+        .doc(dropdownValue)
+        .update({
+          [selectedColorName]: updatedStock,
+        })
+        .then(() => {
+          setStockData((prevStockData) =>
+            prevStockData.map((item) =>
+              item.color === selectedColorName ? { ...item, stock: updatedStock } : item
+            )
+          );
+        })
+        .catch((error) => {
+          console.error('Error updating stock in database:', error);
+        });
+    }
+  };
+
+  const handlePopupCancel = () => {
+    setShowPopup(false);
+    setQuantity(0);
   };
 
   return (
@@ -94,16 +176,37 @@ const StockPage = () => {
                 <td>{item.color}</td>
                 <td>{item.stock}</td>
                 <td>
-                  <button className="btn btn-success">Inward</button>
+                  <button
+                    className="btn btn-success"
+                    onClick={() => handleInwardButtonClick(item.color)}
+                  >
+                    Inward
+                  </button>
                 </td>
                 <td>
-                  <button className="btn btn-danger">Outward</button>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => handleOutwardButtonClick(item.color)}
+                  >
+                    Outward
+                  </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Popup component */}
+      {showPopup && (
+        <Popup
+          quantity={quantity}
+          onQuantityChange={handleQuantityChange}
+          onConfirm={handlePopupConfirm}
+          onCancel={handlePopupCancel}
+          colorName={selectedColorName}
+        />
+      )}
     </div>
   );
 };

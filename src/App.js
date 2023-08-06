@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
 import StockPage from './StockPage';
-import ForecastPage from './ForecastPage';
+import Ecom from './Ecom';
 import BedsheetStockPage from './BedsheetStockPage';
 
 const App = () => {
@@ -19,7 +19,7 @@ const App = () => {
                 <Link className="nav-link" to="/stock">Stock</Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link" to="/forecast">Forecast</Link>
+                <Link className="nav-link" to="/Ecom">Sales</Link>
               </li>
               <li className="nav-item">
                 <Link className="nav-link" to="/bedsheet-stock">Bedsheet Stock</Link>
@@ -30,7 +30,7 @@ const App = () => {
 
         <Routes>
           <Route path="/stock" element={<StockPage />} />
-          <Route path="/forecast" element={<ForecastPage />} />
+          <Route path="/ecom" element={<Ecom />} />
           <Route path="/bedsheet-stock" element={<BedsheetStockPage />} />
         </Routes>
       </div>
