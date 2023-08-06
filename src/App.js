@@ -19,7 +19,7 @@ const App = () => {
     <Router>
       <div className="container">
         <nav className="navbar navbar-expand-lg navbar-light bg-light">
-          <Link className="navbar-brand" to="/">Stock App</Link>
+          <Link className="navbar-brand" to="/">SO FabricStock</Link>
           <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
             <span className="navbar-toggler-icon"></span>
           </button>
@@ -48,7 +48,12 @@ const App = () => {
           <Route path="/forecast" element={<Forecast />} />
         </Routes>
       </div>
+ <>
+ 
+ {/* <h1>Welcom</h1> */}
+ </>
     </Router>
+    
   );
 };
 

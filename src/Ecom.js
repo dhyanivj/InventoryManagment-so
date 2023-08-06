@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
-// import { v4 as uuidv4 } from 'uuid';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -10,8 +9,7 @@ const Ecom = () => {
   const [showOutward, setShowOutward] = useState(false);
   const [styleOptions, setStyleOptions] = useState([]);
   const [colorOptions, setColorOptions] = useState([]);
-  // const [selectedStyle, setSelectedStyle] = useState('');
-
+  const [sizeOptions, setSizeOptions] = useState([]);
   const [formData, setFormData] = useState({
     style: '',
     color: '',
@@ -20,9 +18,11 @@ const Ecom = () => {
   });
 
   const SizeValue = {
-    '54x90': 1.5,
     '90x108': 3,
     '108x108': 3.54,
+    '100x108': 3.3,
+    '54x90': 1.5,
+    'Pillow Cover': 0.36,
   };
 
   useEffect(() => {
@@ -54,6 +54,10 @@ const Ecom = () => {
       console.error('Error fetching color options:', error);
     }
   };
+
+  const fetchSizeOptions = useCallback((selectedColor) => {
+    setSizeOptions(Object.keys(SizeValue));
+  }, []); // Empty dependency array, so it won't change on re-renders
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -110,6 +114,12 @@ const Ecom = () => {
     setShowOutward(true);
   };
 
+  useEffect(() => {
+    if (colorOptions.length > 0) {
+      fetchSizeOptions(formData.color);
+    }
+  }, [colorOptions, formData.color, fetchSizeOptions]);
+
   return (
     <>
       <div className="container mt-5">
@@ -161,7 +171,10 @@ const Ecom = () => {
                           className="form-select"
                           name="color"
                           aria-label="Select Color"
-                          onChange={handleInputChange}
+                          onChange={(e) => {
+                            handleInputChange(e);
+                            fetchSizeOptions(e.target.value);
+                          }}
                         >
                           <option value="">Select Color</option>
                           {colorOptions.map((option) => (
@@ -179,9 +192,11 @@ const Ecom = () => {
                           onChange={handleInputChange}
                         >
                           <option value="">Select Size</option>
-                          <option value="54x90">54x90</option>
-                          <option value="90x108">90x108</option>
-                          <option value="108x108">108x108</option>
+                          {sizeOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div className="mb-3">
@@ -228,7 +243,10 @@ const Ecom = () => {
                           className="form-select"
                           name="color"
                           aria-label="Select Color"
-                          onChange={handleInputChange}
+                          onChange={(e) => {
+                            handleInputChange(e);
+                            fetchSizeOptions(e.target.value);
+                          }}
                         >
                           <option value="">Select Color</option>
                           {colorOptions.map((option) => (
@@ -246,9 +264,11 @@ const Ecom = () => {
                           onChange={handleInputChange}
                         >
                           <option value="">Select Size</option>
-                          <option value="54x90">54x90</option>
-                          <option value="90x108">90x108</option>
-                          <option value="108x108">108x108</option>
+                          {sizeOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div className="mb-3">
