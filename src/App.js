@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
 import StockPage from './StockPage';
 import Ecom from './Ecom';
 import BedsheetStockPage from './BedsheetStockPage';
+import Forecast from './Forecast';
 
 const App = () => {
   // Initialize Bootstrap collapse on component mount
@@ -33,6 +34,9 @@ const App = () => {
               <li className="nav-item">
                 <Link className="nav-link" to="/bedsheet-stock">Bedsheet Stock</Link>
               </li>
+              <li className="nav-item">
+                <Link className="nav-link" to="/forecast">Forecast</Link>
+              </li>
             </ul>
           </div>
         </nav>
@@ -41,6 +45,7 @@ const App = () => {
           <Route path="/stock" element={<StockPage />} />
           <Route path="/ecom" element={<Ecom />} />
           <Route path="/bedsheet-stock" element={<BedsheetStockPage />} />
+          <Route path="/forecast" element={<Forecast />} />
         </Routes>
       </div>
     </Router>
