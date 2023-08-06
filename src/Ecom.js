@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -10,7 +10,7 @@ const Ecom = () => {
   const [showOutward, setShowOutward] = useState(false);
   const [styleOptions, setStyleOptions] = useState([]);
   const [colorOptions, setColorOptions] = useState([]);
-  const [selectedStyle, setSelectedStyle] = useState('');
+  // const [selectedStyle, setSelectedStyle] = useState('');
 
   const [formData, setFormData] = useState({
     style: '',
