@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from './firebase';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Popup = ({ quantity, onQuantityChange, onConfirm, onCancel, colorName }) => {
   return (
@@ -129,6 +131,11 @@ const StockPage = () => {
               item.color === selectedColorName ? { ...item, stock: updatedStock } : item
             )
           );
+
+          const actionText = actionType === 'inward' ? 'updated inward' : 'updated outward';
+          toast.success(`${selectedColorName} is ${actionText}.`, {
+            position: 'bottom-right',
+          });
         })
         .catch((error) => {
           console.error('Error updating stock in database:', error);
@@ -159,42 +166,44 @@ const StockPage = () => {
         </select>
       </div>
       <div className="card m-4 p-1">
-        <table className="table table-striped">
-          <thead>
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col">Color</th>
-              <th scope="col">Stock</th>
-              <th scope="col">Inward</th>
-              <th scope="col">Outward</th>
-            </tr>
-          </thead>
-          <tbody>
-            {stockData.map((item, index) => (
-              <tr key={index}>
-                <th scope="row">{index + 1}</th>
-                <td>{item.color}</td>
-                <td>{item.stock}</td>
-                <td>
-                  <button
-                    className="btn btn-success"
-                    onClick={() => handleInwardButtonClick(item.color)}
-                  >
-                    Inward
-                  </button>
-                </td>
-                <td>
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => handleOutwardButtonClick(item.color)}
-                  >
-                    Outward
-                  </button>
-                </td>
+        <div className="table-responsive">
+          <table className="table table-striped">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Color</th>
+                <th scope="col">Stock</th>
+                <th scope="col">Inward</th>
+                <th scope="col">Outward</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {stockData.map((item, index) => (
+                <tr key={index}>
+                  <th scope="row">{index + 1}</th>
+                  <td>{item.color}</td>
+                  <td>{item.stock}</td>
+                  <td>
+                    <button
+                      className="btn btn-success"
+                      onClick={() => handleInwardButtonClick(item.color)}
+                    >
+                      Inward
+                    </button>
+                  </td>
+                  <td>
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => handleOutwardButtonClick(item.color)}
+                    >
+                      Outward
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Popup component */}
@@ -207,6 +216,9 @@ const StockPage = () => {
           colorName={selectedColorName}
         />
       )}
+
+      {/* Toast Container */}
+      <ToastContainer />
     </div>
   );
 };
