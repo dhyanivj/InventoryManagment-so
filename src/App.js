@@ -4,6 +4,7 @@ import StockPage from './StockPage';
 import Ecom from './Ecom';
 import BedsheetStockPage from './BedsheetStockPage';
 import Forecast from './Forecast';
+import ReadyPieces from './ReadyPieces';
 
 const App = () => {
   // Initialize Bootstrap collapse on component mount
@@ -37,6 +38,9 @@ const App = () => {
               <li className="nav-item">
                 <Link className="nav-link" to="/forecast">Forecast</Link>
               </li>
+              <li className="nav-item">
+                <Link className="nav-link" to="/ReadyPieces">Ready Pieces</Link>
+              </li>
             </ul>
           </div>
         </nav>
@@ -46,7 +50,8 @@ const App = () => {
           <Route path="/ecom" element={<Ecom />} />
           <Route path="/bedsheet-stock" element={<BedsheetStockPage />} />
           <Route path="/forecast" element={<Forecast />} />
-        </Routes>
+          <Route path="/ReadyPieces" element={<ReadyPieces />} />
+        </Routes> 
       </div>
  <>
  
